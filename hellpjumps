@@ -1,0 +1,119 @@
+-- Load Rayfield
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- Create Window
+local Window = Rayfield:CreateWindow({
+    Name = "Spelling Jumping Jacks",
+    LoadingTitle = "Jumping Jack Hub",
+    LoadingSubtitle = "by Cerge",
+    Theme = "Default",
+    ConfigurationSaving = {Enabled = true, FolderName = nil, FileName = "SpellingJJConfig"},
+    KeySystem = false,
+})
+
+local Tab = Window:CreateTab("SPELL JJ", 4483362458)
+
+-- State
+local isRunning = false
+local spellCount = 0
+local cooldown   = 1.2
+
+-- Pre-built words 1–50
+local numberWords = {
+    [1]="ONE",[2]="TWO",[3]="THREE",[4]="FOUR",[5]="FIVE",
+    [6]="SIX",[7]="SEVEN",[8]="EIGHT",[9]="NINE",[10]="TEN",
+    [11]="ELEVEN",[12]="TWELVE",[13]="THIRTEEN",[14]="FOURTEEN",[15]="FIFTEEN",
+    [16]="SIXTEEN",[17]="SEVENTEEN",[18]="EIGHTEEN",[19]="NINETEEN",[20]="TWENTY",
+    [21]="TWENTY ONE",[22]="TWENTY TWO",[23]="TWENTY THREE",[24]="TWENTY FOUR",[25]="TWENTY FIVE",
+    [26]="TWENTY SIX",[27]="TWENTY SEVEN",[28]="TWENTY EIGHT",[29]="TWENTY NINE",[30]="THIRTY",
+    [31]="THIRTY ONE",[32]="THIRTY TWO",[33]="THIRTY THREE",[34]="THIRTY FOUR",[35]="THIRTY FIVE",
+    [36]="THIRTY SIX",[37]="THIRTY SEVEN",[38]="THIRTY EIGHT",[39]="THIRTY NINE",[40]="FORTY",
+    [41]="FORTY ONE",[42]="FORTY TWO",[43]="FORTY THREE",[44]="FORTY FOUR",[45]="FORTY FIVE",
+    [46]="FORTY SIX",[47]="FORTY SEVEN",[48]="FORTY EIGHT",[49]="FORTY NINE",[50]="FIFTY"
+}
+
+-- Core spelling function
+local function startSpelling(count)
+    if isRunning then return end
+    isRunning = true
+    local player = game.Players.LocalPlayer
+
+    for i = 1, count do
+        if not isRunning then break end
+
+        local word = numberWords[i]
+        if word then
+            -- Spell letters
+            local letters = word:gsub(" ","")  -- remove spaces
+            for c in letters:gmatch(".") do
+                if not isRunning then break end
+                game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:
+                    FireServer(c, "All")
+                local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+                if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+                task.wait(cooldown)
+            end
+
+            if not isRunning then break end
+
+            -- Send full word
+            game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:
+                FireServer(word, "All")
+            local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+            if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+            task.wait(cooldown)
+        end
+    end
+
+    isRunning = false
+end
+
+-- Master Stop
+local function stopSpelling()
+    isRunning = false
+end
+
+-- UI: Input Box
+Tab:CreateInput({
+    Name = "Spell Count (1–50)",
+    CurrentValue = "10",
+    PlaceholderText = "Enter 1–50",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(txt)
+        local n = tonumber(txt)
+        if n and n >= 1 and n <= 50 then
+            spellCount = n
+            print("[SPELL] Count set to", n)
+        else
+            warn("[SPELL] Must be 1 to 50")
+        end
+    end,
+})
+
+-- UI: Start Button
+Tab:CreateButton({
+    Name = "Start Spelling JJs",
+    Callback = function()
+        if spellCount > 0 then
+            startSpelling(spellCount)
+        else
+            warn("[SPELL] Set a valid count first!")
+        end
+    end,
+})
+
+-- UI: Master Stop Button
+Tab:CreateButton({
+    Name = "Master Stop",
+    Callback = function()
+        stopSpelling()
+        print("[SPELL] Stopped")
+    end,
+})
+
+-- Also listen for RemoteEvent if you need external stop
+local rs = game:GetService("ReplicatedStorage")
+local stopper = rs:FindFirstChild("StopJumpingJacks")
+if stopper then
+    stopper.OnClientEvent:Connect(stopSpelling)
+end
