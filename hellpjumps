@@ -16,7 +16,7 @@ local Tab = Window:CreateTab("SPELL JJ", 4483362458)
 -- State
 local isRunning = false
 local spellCount = 0
-local cooldown   = 1.2
+local cooldown   = 2
 
 -- Pre-built words 1–50
 local numberWords = {
